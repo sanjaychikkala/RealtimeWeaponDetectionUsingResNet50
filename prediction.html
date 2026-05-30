@@ -1,0 +1,491 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weapon Prediction | Real-Time Weapon Detection</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <!-- Google Fonts: Poppins + Orbitron -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #0a0015;
+            color: #e0e0ff;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated neon background orbs */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 20% 25%, rgba(0, 255, 255, 0.07) 0%, transparent 45%),
+                        radial-gradient(circle at 80% 80%, rgba(180, 0, 255, 0.06) 0%, transparent 55%);
+            z-index: -2;
+        }
+
+        .bg-neon {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .neon-orb {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.14), rgba(80, 120, 255, 0.07));
+            filter: blur(90px);
+            opacity: 0.65;
+            animation: floatNeon 55s infinite ease-in-out;
+        }
+
+        .neon-orb:nth-child(1) { width: 800px; height: 800px; top: -30%; left: -25%; animation-duration: 70s; }
+        .neon-orb:nth-child(2) { width: 650px; height: 650px; bottom: -20%; right: -20%; background: linear-gradient(135deg, rgba(200, 0, 255, 0.11), rgba(255, 80, 180, 0.07)); animation-duration: 90s; animation-delay: 12s; }
+        .neon-orb:nth-child(3) { width: 500px; height: 500px; top: 45%; right: 15%; animation-duration: 60s; animation-delay: 25s; }
+
+        @keyframes floatNeon {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(200px, 140px) rotate(12deg); }
+            50% { transform: translate(-140px, 220px) rotate(-18deg); }
+            75% { transform: translate(160px, -150px) rotate(28deg); }
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 5, 35, 0.88);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+            z-index: 1000;
+            padding: 1.2rem 0;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            color: #00ffff;
+            font-size: 1.7rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .nav-logo i { margin-right: 0.9rem; }
+
+        .nav-menu {
+            display: flex;
+            gap: 1.8rem;
+        }
+
+        .nav-btn {
+            color: #d0e0ff;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.7rem 1.4rem;
+            border-radius: 50px;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: rgba(0, 255, 255, 0.22);
+            color: #00ffff;
+            box-shadow: 0 0 16px rgba(0, 255, 255, 0.5);
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 2.2rem;
+            color: #00ffff;
+            cursor: pointer;
+        }
+
+        /* Main content area */
+        .prediction-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 120px 2rem 80px;
+        }
+
+        .prediction-card {
+            max-width: 620px;
+            width: 100%;
+            background: rgba(20, 10, 55, 0.72);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 255, 255, 0.26);
+            border-radius: 24px;
+            padding: 3.5rem 2.5rem;
+            box-shadow: 0 20px 70px rgba(0,0,0,0.7), 0 0 50px rgba(0, 255, 255, 0.18);
+            text-align: center;
+        }
+
+        .prediction-card h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.8rem;
+            color: #00ffff;
+            text-shadow: 0 0 18px #00ffff;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 1.1rem;
+            color: #d0e0ff;
+            margin-bottom: 0.8rem;
+        }
+
+        .form-group input[type="file"] {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid rgba(0, 255, 255, 0.4);
+            border-radius: 12px;
+            background: rgba(30, 20, 70, 0.6);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .form-group input[type="file"]::file-selector-button {
+            background: #00ffff;
+            color: #0a0020;
+            border: none;
+            padding: 0.7rem 1.4rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button[type="submit"] {
+            margin-top: 1.5rem;
+            padding: 1rem 2.5rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00ffff, #0099ff);
+            color: #0a0020;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.35s;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.6);
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.9);
+            background: linear-gradient(90deg, #00e0ff, #0077ff);
+        }
+
+        .image-preview {
+            margin: 2rem 0;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 340px;
+            border-radius: 12px;
+            border: 2px solid rgba(0, 255, 255, 0.4);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        .result {
+            margin: 2.5rem 0;
+            padding: 1.8rem;
+            background: rgba(0, 255, 255, 0.08);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 12px;
+        }
+
+        .result h2 {
+            font-size: 1.9rem;
+            color: #00ff9d;
+            margin-bottom: 0.8rem;
+        }
+
+        .result .confidence {
+            font-size: 1.5rem;
+            color: #00ffff;
+            font-weight: 600;
+        }
+
+        .error {
+            margin-top: 1.8rem;
+            padding: 1.2rem;
+            background: rgba(255, 77, 77, 0.18);
+            border-left: 6px solid #ff4d4d;
+            border-radius: 10px;
+            color: #ff7043;
+            font-size: 1.1rem;
+        }
+
+        /* Danger Notification Toast */
+        .notification {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            z-index: 2000;
+            padding: 1.4rem 2.2rem;
+            border-radius: 14px;
+            color: white;
+            font-weight: 600;
+            font-size: 1.15rem;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            opacity: 0;
+            transform: translateY(-30px);
+            transition: all 0.6s ease;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .notification.danger {
+            background: linear-gradient(135deg, #ff4d4d, #cc0000);
+            border-left: 8px solid #ff0000;
+        }
+
+        .notification i {
+            font-size: 1.8rem;
+        }
+
+        /* Footer */
+        footer {
+            background: linear-gradient(135deg, #0a0015, #180030);
+            padding: 3rem 2rem;
+            text-align: center;
+            border-top: 1px solid rgba(0, 255, 255, 0.15);
+            color: #a0a0ff;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background: rgba(10, 5, 35, 0.98);
+                padding: 1.8rem;
+            }
+
+            .nav-menu.active { display: flex; }
+            .menu-toggle { display: block; }
+
+            .prediction-card { padding: 2.5rem 1.8rem; }
+            .prediction-card h1 { font-size: 2.3rem; }
+            .notification { right: 15px; top: 15px; font-size: 1rem; padding: 1rem 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Neon Background Orbs -->
+    <div class="bg-neon">
+        <div class="neon-orb"></div>
+        <div class="neon-orb"></div>
+        <div class="neon-orb"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="userHome" class="nav-logo">
+                <i class="fas fa-shield-alt"></i>
+                Weapon Detection System
+            </a>
+            <div class="menu-toggle" id="mobileMenu">☰</div>
+            <div class="nav-menu" id="navMenu">
+                <a href="userHome" class="nav-btn"><i class="fas fa-home mr-1"></i>Home</a>
+                <a href="training" class="nav-btn"><i class="fas fa-brain mr-1"></i>Training</a>
+                <a href="prediction" class="nav-btn"><i class="fas fa-crosshairs mr-1"></i>Prediction</a>
+                                <a href="live" class="nav-btn"><i class="fas fa-video mr-1"></i>Live Stream</a>
+
+                <a href="log" class="nav-btn"><i class="fas fa-sign-out-alt mr-1"></i>Logout</a>
+                <a href="#about" class="nav-btn"><i class="fas fa-info-circle mr-1"></i>About</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Prediction / Upload Section -->
+    <section class="prediction-section">
+        <div class="prediction-card">
+            <h1>Weapon Image Classification</h1>
+
+            {% if result %}
+            <div class="result">
+                <h2>Predicted Weapon: {{ result }}</h2>
+                <p class="confidence">Confidence: {{ confidence }}%</p>
+            </div>
+            {% endif %}
+
+            {% if image_url %}
+            <div class="image-preview">
+                <img src="{{ image_url }}" alt="Uploaded Weapon Image">
+            </div>
+            {% endif %}
+
+            <div class="form-container">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="image">Upload Weapon Image</label>
+                        <input type="file" id="image" name="image" accept="image/*" required onchange="previewImage(event)">
+                    </div>
+                    <button type="submit">Predict Weapon</button>
+                </form>
+            </div>
+
+            {% if error %}
+            <div class="error">
+                <p>{{ error }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Floating Notification Container -->
+    <div id="notificationContainer"></div>
+
+    <!-- Footer -->
+    <footer>
+        <p>© 2026 Real-Time Weapon Detection System | Powered by AI</p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Mobile menu toggle
+        const mobileMenu = document.getElementById('mobileMenu');
+        const navMenu = document.getElementById('navMenu');
+        if (mobileMenu && navMenu) {
+            mobileMenu.addEventListener('click', () => {
+                navMenu.classList.toggle('active');
+            });
+        }
+
+        // Live image preview
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                let previewDiv = document.querySelector('.image-preview');
+                let img = document.getElementById('previewImg');
+
+                if (!previewDiv) {
+                    previewDiv = document.createElement('div');
+                    previewDiv.className = 'image-preview';
+                    document.querySelector('.prediction-card').insertBefore(previewDiv, document.querySelector('.form-container'));
+                }
+
+                if (!img) {
+                    img = document.createElement('img');
+                    img.id = 'previewImg';
+                    previewDiv.appendChild(img);
+                }
+
+                img.src = reader.result;
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        // Weapon detection notification
+        document.addEventListener('DOMContentLoaded', () => {
+            {% if result %}
+                const predicted = "{{ result|escapejs }}".toLowerCase().trim();
+                const conf = parseFloat("{{ confidence }}") || 0;
+
+                const weaponKeywords = [
+                    'handgun', 'pistol', 'rifle', 'ak47', 'knife', 'sword',
+                    'shotgun', 'smg', 'machine gun', 'bazooka', 'gun', 'firearm',
+                    'automatic', 'revolver', 'assault', 'blade'
+                ];
+
+                const isWeaponDetected = weaponKeywords.some(kw => predicted.includes(kw)) && conf >= 50;
+
+                if (isWeaponDetected) {
+                    showWeaponDetectedNotification(predicted, conf);
+                } else if ("{{ result|escapejs }}") {
+                    showNoThreatNotification();
+                }
+            {% endif %}
+        });
+
+        function showWeaponDetectedNotification(weapon, confidence) {
+            const container = document.getElementById('notificationContainer');
+            const toast = document.createElement('div');
+            toast.className = 'notification danger show';
+            toast.innerHTML = `
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>WEAPON DETECTED: ${weapon.toUpperCase()} (${confidence}% confidence)</span>
+            `;
+            container.appendChild(toast);
+
+            // Remove after 10 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 600);
+            }, 10000);
+
+            // Optional: browser notification (if user granted permission)
+            if (Notification.permission === "granted") {
+                new Notification("SECURITY ALERT", {
+                    body: `Weapon detected: ${weapon.toUpperCase()} (${confidence}%)`,
+                    icon: "/static/alert-icon.png"  // ← add your own icon if you want
+                });
+            }
+        }
+
+        function showNoThreatNotification() {
+            const container = document.getElementById('notificationContainer');
+            const toast = document.createElement('div');
+            toast.className = 'notification safe show';
+            toast.innerHTML = `
+                <i class="fas fa-check-circle"></i>
+                <span>No weapon detected in the image</span>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 600);
+            }, 6000);
+        }
+    </script>
+
+</body>
+</html>

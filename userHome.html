@@ -1,0 +1,412 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard | Real-Time Weapon Detection</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+    <!-- Google Fonts: Poppins + Orbitron -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #0a0015;
+            color: #e0e0ff;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated neon background orbs */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 20% 25%, rgba(0, 255, 255, 0.07) 0%, transparent 45%),
+                        radial-gradient(circle at 80% 80%, rgba(180, 0, 255, 0.06) 0%, transparent 55%);
+            z-index: -2;
+        }
+
+        .bg-neon {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .neon-orb {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.14), rgba(80, 120, 255, 0.07));
+            filter: blur(90px);
+            opacity: 0.65;
+            animation: floatNeon 55s infinite ease-in-out;
+        }
+
+        .neon-orb:nth-child(1) { width: 800px; height: 800px; top: -30%; left: -25%; animation-duration: 70s; }
+        .neon-orb:nth-child(2) { width: 650px; height: 650px; bottom: -20%; right: -20%; background: linear-gradient(135deg, rgba(200, 0, 255, 0.11), rgba(255, 80, 180, 0.07)); animation-duration: 90s; animation-delay: 12s; }
+        .neon-orb:nth-child(3) { width: 500px; height: 500px; top: 45%; right: 15%; animation-duration: 60s; animation-delay: 25s; }
+
+        @keyframes floatNeon {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(200px, 140px) rotate(12deg); }
+            50% { transform: translate(-140px, 220px) rotate(-18deg); }
+            75% { transform: translate(160px, -150px) rotate(28deg); }
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 5, 35, 0.88);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+            z-index: 1000;
+            padding: 1.2rem 0;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            color: #00ffff;
+            font-size: 1.7rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .nav-logo i { margin-right: 0.9rem; }
+
+        .nav-menu {
+            display: flex;
+            gap: 1.8rem;
+        }
+
+        .nav-btn {
+            color: #d0e0ff;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.7rem 1.4rem;
+            border-radius: 50px;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: rgba(0, 255, 255, 0.22);
+            color: #00ffff;
+            box-shadow: 0 0 16px rgba(0, 255, 255, 0.5);
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 2.2rem;
+            color: #00ffff;
+            cursor: pointer;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            height: 60vh;
+            min-height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #transitCanvas {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            padding: 3rem 2rem;
+            background: rgba(10, 5, 40, 0.65);
+            backdrop-filter: blur(14px);
+            border-radius: 24px;
+            border: 1px solid rgba(0, 255, 255, 0.25);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+        }
+
+        .hero-content h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4.2rem;
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff;
+            margin-bottom: 1.2rem;
+        }
+
+        .hero-content p {
+            font-size: 1.4rem;
+            color: #b0c8ff;
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: rgba(20, 10, 55, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 255, 255, 0.25);
+            border-radius: 20px;
+            padding: 2.2rem;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 60px rgba(0, 255, 255, 0.25);
+        }
+
+        .card h3 {
+            font-size: 1.7rem;
+            color: #00d4ff;
+            margin-bottom: 1.2rem;
+            text-shadow: 0 0 8px #00d4ff;
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .action-btn {
+            padding: 1.2rem;
+            background: rgba(0, 255, 255, 0.12);
+            border: 1px solid rgba(0, 255, 255, 0.4);
+            border-radius: 12px;
+            color: #00ffff;
+            font-size: 1.2rem;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background: rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            transform: translateY(-3px);
+        }
+
+        /* Footer */
+        footer {
+            background: linear-gradient(135deg, #0a0015, #180030);
+            padding: 3rem 2rem;
+            text-align: center;
+            border-top: 1px solid rgba(0, 255, 255, 0.15);
+            color: #a0a0ff;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background: rgba(10, 5, 35, 0.98);
+                padding: 1.8rem;
+            }
+
+            .nav-menu.active { display: flex; }
+            .menu-toggle { display: block; }
+
+            .hero-content h1 { font-size: 3rem; }
+            .main-content { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Neon Background Orbs -->
+    <div class="bg-neon">
+        <div class="neon-orb"></div>
+        <div class="neon-orb"></div>
+        <div class="neon-orb"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="userHome" class="nav-logo">
+                <i class="fas fa-shield-alt"></i>
+                Weapon Detection System
+            </a>
+            <div class="menu-toggle" id="mobileMenu">☰</div>
+            <div class="nav-menu" id="navMenu">
+                <a href="userHome" class="nav-btn"><i class="fas fa-home mr-1"></i>Home</a>
+                <a href="training" class="nav-btn"><i class="fas fa-book mr-1"></i>Training</a>
+                <a href="prediction" class="nav-btn"><i class="fas fa-chart-line mr-1"></i>Prediction</a>
+                                <a href="live" class="nav-btn"><i class="fas fa-video mr-1"></i>Live Stream</a>
+
+                <a href="log" class="nav-btn"><i class="fas fa-sign-out-alt mr-1"></i>Logout</a>
+                <a href="#about" class="nav-btn"><i class="fas fa-info-circle mr-1"></i>About</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <canvas id="transitCanvas"></canvas>
+        <div class="hero-content">
+            <h1>Welcome, User</h1>
+            <p style="margin-top: 1.2rem; font-size: 1.4rem; color: #b0c8ff;">
+                Real-Time Weapon Detection Platform
+            </p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="card">
+            <h3>Quick Actions</h3>
+            <div class="quick-actions">
+                <a href="training" class="action-btn">Start New Training Session</a>
+                <a href="prediction" class="action-btn">Run Live Prediction / Upload Video</a>
+                <a href="#" class="action-btn">View Detection History</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Recent Activity</h3>
+            <p style="color: #a0c0ff; line-height: 1.7;">
+                • Last detection: 2026-02-05 14:32 – Handgun (92% confidence)<br>
+                • Model training completed: 3 hours ago<br>
+                • 7 new alerts in the past 24 hours
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>System Status</h3>
+            <p style="font-size: 2.8rem; color: #00ff9d; font-weight: 700; text-shadow: 0 0 15px #00ff9d;">
+                Online
+            </p>
+            <p style="margin-top: 1rem; color: #b0c8ff;">
+                Average latency: 42 ms<br>
+                Current FPS: 48
+            </p>
+        </div>
+
+        <!-- About Section -->
+        <div class="card" id="about" style="grid-column: 1 / -1;">
+            <h3>About the Project</h3>
+            <p style="font-size: 1.15rem; line-height: 1.8; color: #d0e0ff;">
+                This Real-Time Weapon Detection System uses state-of-the-art deep learning models 
+                to identify firearms, knives, and other threats from live video streams and uploaded footage. 
+                The platform provides instant alerts, accurate bounding box visualization, 
+                and supports both training custom models and running predictions in real time.
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>© 2026 Real-Time Weapon Detection System | Powered by AI</p>
+    </footer>
+
+    <!-- Mobile Menu Toggle -->
+    <script>
+        const mobileMenu = document.getElementById('mobileMenu');
+        const navMenu = document.getElementById('navMenu');
+
+        if (mobileMenu && navMenu) {
+            mobileMenu.addEventListener('click', () => {
+                navMenu.classList.toggle('active');
+            });
+        }
+    </script>
+
+    <!-- Neon Particle Canvas Background -->
+    <script>
+        const canvas = document.getElementById('transitCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const particles = [];
+        const particleCount = 60;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = Math.random() * 0.8 - 0.4;
+                this.speedY = Math.random() * 0.8 - 0.4;
+                this.color = 'rgba(0, 255, 255, 0.4)';
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(10, 5, 35, 0.08)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+
+</body>
+</html>

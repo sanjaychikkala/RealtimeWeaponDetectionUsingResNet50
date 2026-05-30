@@ -1,0 +1,25 @@
+{
+    "num_classes": 9,
+    "class_to_id": {
+        "Automatic Rifle": 0,
+        "Bazooka": 1,
+        "Grenade Launcher": 2,
+        "Handgun": 3,
+        "Knife": 4,
+        "SMG": 5,
+        "Shotgun": 6,
+        "Sniper": 7,
+        "Sword": 8
+    },
+    "id_to_class": {
+        "0": "Automatic Rifle",
+        "1": "Bazooka",
+        "2": "Grenade Launcher",
+        "3": "Handgun",
+        "4": "Knife",
+        "5": "SMG",
+        "6": "Shotgun",
+        "7": "Sniper",
+        "8": "Sword"
+    }
+}
